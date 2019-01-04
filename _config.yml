@@ -68,11 +68,11 @@ netease_comment: false
 
 # Analytics settings
 # Baidu Analytics 
-# ba_track_id: [your track id]
+ba_track_id: f4c4e60272b0238c0b24b3b3339b96b5
 
 # Google Analytics
-# ga_track_id: ''            # Format: UA-xxxxxx-xx
-# ga_domain: peterbald.github.io
+ga_track_id: 'UA-131765027-1'            # Format: UA-xxxxxx-xx
+ga_domain: zhannailong.com
 
 
 
