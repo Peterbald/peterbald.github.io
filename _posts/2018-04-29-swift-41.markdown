@@ -1,0 +1,280 @@
+---
+layout: post
+title: "Swift 4.1 更新指北(译)"
+subtitle: ''
+author: "RandomJ"
+header-img: "img/background.jpeg"
+tags:
+  - Swift
+  - iOS
+---
+
+#### 一、概述
+
+`Swift 4.1` 是 `Swift 4` 的第一个小版本更新，主要包括一些很实用的改进，例如，自动合成 `Equatable` 和 `Hashable`，协议条件约束，检测模拟器环境等等。[例子工程地址](https://www.hackingwithswift.com/articles/70/learn-whats-new-in-swift-4-1-with-a-playground)
+
+#### 二、自动合成 Equatable 和 Hashable
+
+`Equatable` 协议允许 `Swfit` 中相同类型的两个实例之前的比较。当我们写 `5 == 5` 的时候，`Swift` 之所以能够理解是因为 `Int` 遵守 `Equtable` 协议，意味着它实现了一个 `==` 函数描述两个 `Int` 之间的关系。
+
+然而，实现 `Equatable`有点蛋疼，看下面的代码：
+
+```swift
+struct Person {
+    var name: String
+}
+```
+
+如果你有两个 Person 实例，并且想要确保他们的一致性，需要比较他们的所有属性，具体如下：
+```swift
+// Swift 4.0 的实现
+struct Person: Equatable {
+    var name: String
+
+    static func ==(lhs: Person, rhs: Person) -> Bool {
+        return lhs.name == rhs.name
+    }
+}
+```
+```swift
+// Swift 4.1 实现
+struct Person: Equatable {
+    var name: String
+}
+```
+上面的代码读起来很枯燥，写起来更蛋疼。比较幸运的是，`Swift 4.1` 能够自动合成 `Equatable` 协议中约定的方法，也就是自动生成 `==`方法，方法中会比较两个对象间的所有属性是否相等。现在你只需要在指定的类型上添加遵守 `Equatable` 协议，其他的操作 `Swift` 会自动完成。
+
+当然，如果你想你也可以自己实现 `==` 。例如，如果你的类型有一个标记是否唯一的 `id`，你需要自己写 `==` 来只比较这个值，而不是让 `Swift` 来完成所有其他的工作。
+
+`Swift 4.1` 也给 `Hashable` 协议提供了自动合成的支持，意味着会自动合成 `hashValue` 属性。`Hashable` 通常情况下实现比较蛋疼，因为需要返回一个唯一的（或者大多数情况下唯一的）`hash` 值。这一点很重要，因为它可以使对象作为字典的 `keys`并且存储在 `Set`中。
+```swift
+// Swift 4.0 实现
+struct Person: Hashable {
+    var name: String
+    var hashValue: Int {
+        return name.hashValue
+    }
+
+    static func ==(lhs: HashPerson, rhs: HashPerson) -> Bool {
+        return lhs.name == rhs.name
+    }
+}
+```
+```swift
+// Swift 4.1 实现
+struct Person: Hashable {
+    var name: String
+}
+````
+虽然大多数情况下不用自己实现，但是如果你想做些特别的事情的时候也可以自己实现。
+
+注：现在我们仍然需要让类型遵守协议，自动合成需要类型的所有属性都分别遵守了 `Equatable` 或者 `Hashable` 协议。
+
+更多信息，请参照 [Swift Evolution proposal SE-0185](https://github.com/apple/swift-evolution/blob/master/proposals/0185-synthesize-equatable-hashable.md)
+
+#### 三、Codable Key 编解码策略优化
+
+*   之前写过一篇完整的文章来描述这个特性：[Swift 4.1 improves Codable with keyDecodingStrategy](https://www.hackingwithswift.com/articles/52/swift-4-1-improves-codable-with-keydecodingstrategy)
+
+在 Swift 4.0 中使用 `Codable` 协议一个常见问题就是，`JSON` 中使用蛇形命名法作为 `key` 的名字，而 `Swift` 中使用驼峰命名法。`Codable` 不能够理解两种命名的差别，必须创建自定义的 `CodingKeys` 枚举来解决这个问题。
+
+基于上面的原因，Swift 4.1 中引入了 `keyDecodingStrategy` 属性。默认为 `.useDefaultKeys` ，直接映射 `JSON` 名字到`Swift`属性。可以使用 `.convertFromSnakeCase` 来让 `Codable` 处理名字转换。
+```swift
+let decoder = JSONDecoder()
+
+do {
+    decoder.keyDecodingStrategy = .convertFromSnakeCase
+    let macs = try decoder.decode([Mac].self, from: jsonData)
+    print(macs)
+} catch {
+    print(error.localizedDescription)
+}
+```
+反之，如果你想将遵守 `Codable` 协议的 `struct` 类型转成 `JSON`，`Struct` 的属性是驼峰命名的，转成的`JSON`是蛇形命名的，设置 `keyEncodingStrategy` 为 `.convertToSnakeCase`。
+```swift
+let encoder = JSONEncoder()
+encoder.keyEncodingStrategy = .convertToSnakeCase
+let encoded = try encoder.encode(someObject)
+```
+#### 四、协议的条件遵守
+
+`Swift 4.1` 实现了 [SE-0143](https://github.com/apple/swift-evolution/blob/master/proposals/0143-conditional-conformances.md) 提案，引入了条件遵守协议。具体为只有当满足指定条件的时候，类型才能遵守协议。
+
+举例来讲，我们现在声明一个可以用来买东西的协议 `Purchaseable` 。
+```swift
+protocol Purchaseable {
+   func buy()
+}
+```
+现在可以定义一个 `Book` 结构体，遵守 `Purchaseable`协议，在买一本书的时候打印消息。
+```swift
+struct Book: Purchaseable {
+   func buy() {
+      print("You bought a book")
+   }
+}
+```
+这个场景很简单，让我们更进一步。如果这个用户有一个装满书籍的篮子，并且想把篮子里所有的书全都买下来。我们当然可以遍历数组，然后调用每本书的 `buy` 方法。但是更好的方式是给 `Array` 写个 `Extension` 遵守 `Purchaseable` 协议，然后实现协议 `buy` 方法，调用每个 `Element` 的 `buy` 方法。
+
+基于上面的原因，`Swift 4.1` 引入了 `Conditional Conformances`。如果我们尝试拓展数组，会有一定的副作用。例如会给一个字符串数组添加 `buy` 方法，而字符串没有 `buy` 方法供我们调用。
+
+`Swift 4.1` 可以实现只有当数组中的元素是遵守 `Purchaseable`，数组才能遵守 `Purchaseable` 协议。
+```swift
+extension Array: Purchaseable where Element: Purchaseable {
+   func buy() {
+      for item in self {
+         item.buy()
+      }
+   }
+}
+```
+如你所见，协议的条件遵守，让我们以更简洁的方式给拓展添加协议支持。
+
+同样的，协议的条件遵守也使我们的 `swift` 代码更加简单和安全，并且我们也不需要做些额外的工作。例如，创建两个可选字符串的数组并且比较它们是否相等。
+```swift
+ar left: [String?] = ["Andrew", "Lizzie", "Sophie"]
+var right: [String?] = ["Charlotte", "Paul", "John"]
+left == right
+```
+上面的例子看起来不那么重要，但是 `Swift 4.0` 上面的语法不能编译，`String` 和 `[String]` 是 `Equatable`，但是 `[String?]` 不是。
+
+`Swift 4.1` 中的协议的条件约束指的是只要满足指定的条件，就可以遵守协议。上面的例子中，如果数组中的元素是遵守 `Equatble` 的，那么数组就是遵守 `Equatable` 协议。所以，上面的代码在 `Swift 4.1` 上可以编译通过。
+
+协议的条件遵守也适用于 `Codable` 协议，并且使代码变得更加安全。
+```swift
+import Foundation
+
+struct Person {
+   var name = "Taylor"
+}
+
+var people = [Person()]
+var encoder = JSONEncoder()
+// try encoder.encode(people)
+```
+如果将 `encoder.encode(people)` 的注释打开，在 `Swift 4.1` 中编译不通过，因为试图 `encode` 一个不遵守 `Codable` 协议的类型。然而，这段代码在 `Swift 4.0` 上面是可以编译通过的，但是因为 `Person` 不遵守 `Codable` 协议会导致在运行时崩溃。
+
+很明显，大家都不想要运行时崩溃。幸运的是，`Swift 4.1` 使用协议的条件遵守帮我们清除了这个障碍，`Optional`、`Array`、`Dictionary` 和 `Set` 只有在他们的内容遵守 `Codable` 协议的时候，自身才遵守协议，所以上面的代码在 `Swift 4.1` 会编译不过。
+
+#### 五、关联类型的递归约束
+
+`Swift 4.1` 实现了 [SE-0157](https://github.com/apple/swift-evolution/blob/master/proposals/0157-recursive-protocol-constraints.md) 提案，增强了协议内部使用关联类型的限制。现在可以给关联类型创建一个递归的约束，就是关联类型可以用自身所在协议来约束自己。
+
+我们以技术公司的管理层级来阐述这个问题，在一个公司，每一个雇员都有一个上司，每个上司必须有一个以上的下属。我们以一个 `Employee` 协议来表明这样的关系：
+```swift
+protocol Employee {
+   associatedtype Manager: Employee
+   var manager: Manager? { get set }
+}
+```
+尽管这是一个不言而喻的关系，但是 `Swift 4.0` 上这段代码却编译不过，因为在协议内部使用了自己。
+
+感谢这个新特性，我们可以模拟一个包含三种团队角色的技术公司，初级开发工程师、高级开发工程师和董事会成员。
+```swift
+class BoardMember: Employee {
+   var manager: BoardMember?
+}
+
+class SeniorDeveloper: Employee {
+   var manager: BoardMember?
+}
+
+class JuniorDeveloper: Employee {
+   var manager: SeniorDeveloper?
+}
+```
+注：这边用 `Class` 而不是 `Struct`，是因为 `BoardMember` 里面包含一个 `BoardMember`，如果用结构体会形成无穷大的结构体。如果这里面有一个 `Class` ，我个人倾向于使用全部采用 `Class` 来保持一致。如果你想要使用结构体，可以把 `JuniorDeveloper` 和 `SeniorDeveloper` 设置成结构体。
+
+#### 六、模块引入检测
+
+`Swift 4.1` 实现了 [SE-0075](https://github.com/apple/swift-evolution/blob/master/proposals/0075-import-test.md) 提案，引入了一个新的 `canImport` 条件来帮助我们在编译期检测一个指定的模块能否被导入。
+
+这个特性对跨平台的代码很有用，例如你的代码在 `macOS` 和 `iOS` 行为不一样，或者你需要 `Linux` 的功能。
+```swift
+#if canImport(SpriteKit)
+   // this will be true for iOS, macOS, tvOS, and watchOS
+#else
+   // this will be true for other platforms, such as Linux
+#endif
+```
+之前我们必须通过判断平台信息来处理这种情况。
+```swift
+#if !os(Linux)
+   // Matches macOS, iOS, watchOS, tvOS, and any other future platforms
+#endif
+
+#if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
+   // Matches only Apple platforms, but needs to be kept up to date as new platforms are added
+#endif
+```
+新特性 `canImport` 让我们更好的关注功能，而不是当前编译的平台，避免了很多蛋疼的问题。
+
+#### 七、模拟器环境检测
+
+`Swift 4.1` 实现了 [SE-0190](https://github.com/apple/swift-evolution/blob/master/proposals/0190-target-environment-platform-condition.md) 提案，引入了 `targetEnvironment` 条件，帮助我们更好的区分模拟器和真机。现在 `targetEnvironment` 只有一个值 `simulator`，当是模拟器设备的时候，返回 `true`。
+```swift
+#if targetEnvironment(simulator)
+   // code for the simulator here
+#else
+   // code for real devices here
+#endif
+```
+当代码用来处理类似于从摄像头读取数据或者访问陀螺仪数据等模拟器不支持的功能的时候，这个条件判断很有用。举个例子，从摄像头选择照片，如果是真机，创建和配置 `UIImagePickerController()`方法 ，如果是模拟器，从 `Bundle` 中读取一张图片。
+```swift
+import UIKit
+
+class TestViewController: UIViewController, UIImagePickerControllerDelegate {
+   // a method that does some sort of image processing
+   func processPhoto(_ img: UIImage) {
+       // process photo here
+   }
+
+   // a method that loads a photo either using the camera or using a sample
+   func takePhoto() {
+      #if targetEnvironment(simulator)
+         // we're building for the simulator; use the sample photo
+         if let img = UIImage(named: "sample") {
+            processPhoto(img)
+         } else {
+            fatalError("Sample image failed to load")
+         }
+      #else
+         // we're building for a real device; take an actual photo
+         let picker = UIImagePickerController()
+         picker.sourceType = .camera
+         vc.allowsEditing = true
+         picker.delegate = self
+         present(picker, animated: true)
+      #endif
+   }
+
+   // this is called if the photo was taken successfully
+   func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
+      // hide the camera
+      picker.dismiss(animated: true)
+
+      // attempt to retrieve the photo they took
+      guard let image = info[UIImagePickerControllerEditedImage] as? UIImage else {
+         // that failed; bail out
+         return
+      }
+
+      // we have an image, so we can process it
+      processPhoto(image)
+   }
+}
+```
+#### 八、FlatMap 部分场景更名 CompactMap
+
+`FlatMap` 在 `Swift 4.0` 中很有用，特别是在转换集合中的对象，并且移除其中的 `nil` 对象的时候。Swift 提案 [SE-0187](https://github.com/apple/swift-evolution/blob/master/proposals/0187-introduce-filtermap.md) 中有对这部分内容更改的说明，在 Swift 4.1 中 `flatMap` 为了语义更加清晰，已经更名成 `compactMap`。
+```swift
+let array = ["1", "2", "Fish"]
+let numbers = array.compactMap { Int($0) }
+```
+上面例子的结果是 `[1, 2]`。
+
+#### 九、展望 Swift 5
+
+引入协议的条件遵守已经使 `Swift` 团队提升稳定性的同时，移除了大量代码，自动合成 `Equatable` 和 `Hashable` 的支持也使我们开发更加便捷。其他一些在开发或者在 `Review` 的提案，包括 [SE-0192: Non-Exhaustive Enums](https://github.com/apple/swift-evolution/blob/master/proposals/0192-non-exhaustive-enums.md), [SE-0194: Derived Collection of Enum Cases](https://github.com/apple/swift-evolution/blob/master/proposals/0194-derived-collection-of-enum-cases.md),和 [SE-0195: Dynamic Member Lookup](https://github.com/apple/swift-evolution/blob/master/proposals/0195-dynamic-member-lookup.md) – [click here to learn more about new Swift features coming in 2018](https://www.hackingwithswift.com/articles/62/what-2018-has-in-store-for-swift)。同这些新特性一样重要的是，苹果计划在今年实现 `Swift` 的 `ABI` 稳定，期待🙏🙏🙏。
+
+#### 十、感谢原作者 `Paul Hudson`，[原文地址](https://www.hackingwithswift.com/articles/50/whats-new-in-swift-4-1)
