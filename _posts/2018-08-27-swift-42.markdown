@@ -441,7 +441,7 @@ if let keyboards = instruments as? Tuneable {
 }
 ```
 注：上面在条件遵循的运行时检测中，会输出 `"Can't tune instrument."`，因为 `Instrument`类型不遵守 `Tuneable` 协议，如果是两个 `Keyboard` 类型就可以。
-更多关于 `Conditional Conformance` 的内容，参考 [Swift 4.1 更新指北(译)](https://www.zhannailong.com/2018/04/29/swift-41/)
+更多关于 `Conditional Conformance` 的内容，参考 [Swift 4.1 更新指北(译)](https://www.randomj.top/2018/04/29/swift-41/)
 ##### 3.6.3 Hashable 在标准库中条件遵守增强
 在 `Swift 4.2` 中可选值、数组、字典和区间当他们的元素是 `Hashable` 的话，他们也是 `Hashable`。
 ```swift
