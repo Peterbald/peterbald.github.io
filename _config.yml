@@ -3,9 +3,9 @@ title: RandomJ Blog
 SEOTitle: 詹乃龙的博客 | RandomJ Blog
 header-img: img/home-bg.jpg
 email: zhannailong@163.com
-description: "9012 年了写点关于程序的东西"
-keyword: "RandomJ Blog, 博客, 个人网站, 互联网, Web, JavaScript, ReactNative, WebView, WebRTC, 移动端"
-url: "https://perterbald.github.io"              # your host, for absolute URL
+description: "iOS、Swift、Objective-C | 客户端开发 | WebRTC | Software Engineer | RandomJ Blog, 詹乃龙的博客，期待与大家一起提升技术实力。"
+keyword: "RandomJ Blog, 博客, 个人网站, 互联网, Web, JavaScript, ReactNative, WebView, WebRTC, 移动端, 詹乃龙"
+url: "https://www.randomj.top"              # your host, for absolute URL
 baseurl: ""                             # for example, '/blog' if your blog hosted on 'host/blog'
 
 # Publish posts or collection documents with a future date.

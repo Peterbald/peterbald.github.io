@@ -2,6 +2,7 @@
 layout: post
 title: "为什么 Swift 关联类型的协议需要做为泛型约束使用(译)"
 subtitle: ''
+description: "Swift, 关联类型, 协议, 泛型, 泛型约束"
 author: "RandomJ"
 header-img: "img/background.jpeg"
 tags:

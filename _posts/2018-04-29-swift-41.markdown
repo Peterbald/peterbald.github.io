@@ -2,6 +2,7 @@
 layout: post
 title: "Swift 4.1 更新指北(译)"
 subtitle: ''
+description: "Swift 4.1, iOS Developer, iOS 开发, Swift 4.1 更新"
 author: "RandomJ"
 header-img: "img/background.jpeg"
 tags:
