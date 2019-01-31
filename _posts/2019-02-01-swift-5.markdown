@@ -1,0 +1,288 @@
+---
+layout: post
+title: "Swift 5 更新指北(译)"
+subtitle: ""
+description: "Swift 5, iOS Developer, iOS 开发, Swift 5 更新"
+author: "RandomJ"
+header-img: "img/background.jpeg"
+tags:
+  - Swift
+  - iOS
+---
+
+#### 一、概述
+
+以下的更新说明适用于最新的 `Xcode 10.2 beta` 版本
+
+#### 二、APP 瘦身
+
+`iOS 12.2`、`watchOS 5.2` 和 `tvOS 12.2` 等设备上编译的 `Swift APP` 不再包含 `Swift` 标准库和 `Swift SDK` 的动态链接库。因此，当采用 `TestFlight` 或者本地开发者分发的时候， `Swift APP` 的体积会更小。
+
+为了比较 `Swift APP` 在 `iOS 12.2` 和之前的版本上的体积差别。设置你的 APP 的最低支持版本为 12.1 或者更低的版本，设置 `Scheme` 为 `Generic iOS Device`，然后执行 `Archive`操作。`Archive` 之后，`Distribute App` 选择 `Developement(Distribute to members of your team)`，在后面的 `Development distribute options` 页面中的 `App Thining` 菜单中选择指定设备，例如 `iPhone XS` ，当发布过程执行完成之后，打开瘦身尺寸报告。`iOS 12.2` 的包体积会比之前的版本小，具体小多少，取决于你的 `App` 使用了多少系统库。
+
+更多关于 `App` 瘦身的信息，可以在查看官方文档 [What is app thinning](https://help.apple.com/xcode/mac/current/#/devbbdc5ce4f)。关于 `App` 尺寸的信息，可以参考官方文档 [查看构建版本和文件大小](https://help.apple.com/app-store-connect/#/dev3b56ce97c)。
+
+#### 三、语言演进
+
+#### 3.1 动态调用
+
+使用 `@dynamicCallable` 关键字这个语法糖能让我们像调用函数一样调用类方法。
+
+```swift
+@dynamicCallable struct ToyCallable {
+    func dynamicallyCall(withArguments: [Int]) {}
+    func dynamicallyCall(withKeywordArguments: KeyValuePairs<String, Int>) {}
+}
+
+let x = ToyCallable()
+
+x(1, 2, 3)
+// 调用 `x.dynamicallyCall(withArguments: [1, 2, 3])`
+
+x(label: 1, 2)
+// 调用 `x.dynamicallyCall(withKeywordArguments: ["label": 1, "": 2])`
+```
+
+#### 3.2 KeyPath
+
+增加对自身 `keypath (\.self)` 的支持，是一个指向自身输入值的`WritableKeyPath`类型
+
+```swift
+let id = \Int.self
+var y = 2
+print(y[keyPath: id]) // 输出 2
+y[keyPath: id] = 3    // y 的值也更改为 3
+print(y[keyPath: id]) // 输出 3
+```
+
+#### 3.3 枚举
+
+在 `Swift 5` 以前，枚举的 `case` 可以带有变长参数
+
+```swift
+enum X {
+    case foo(bar: Int...)
+}
+
+func baz() -> X {
+    return .foo(bar: 0, 1, 2, 3)
+}
+```
+
+这个特性不是有意加入的，现在这种实现方式引入了一个错误(46821582)。所以，现在将枚举 `case` 的类型显示指定和传入数组类型
+
+```swift
+enum X {
+    case foo(bar: [Int])
+}
+
+func baz() -> X {
+    return .foo(bar: [0, 1, 2, 3])
+}
+```
+
+#### 3.4 try? 可选值嵌套
+
+在 `Swift 5` 之前，`try?` 很容易引入可选值嵌套， `Swift 5` 以后，会将结果拍平，不会返回嵌套的类型
+
+```swift
+func optionalInt() throws -> Int? {
+	return 1
+}
+let result = try? optionalInt()
+print(type(of: result))
+// Swift 4.x 输出 Optional<Optional<Int>
+// Swift 5.0 输出 Optional<Int>
+```
+
+#### 3.5 字面量初始化
+
+如果一个类型 `T` 遵守了字面量初始化协议，例如 [`ExpressibleByIntegerLiteral`](https://developer.apple.com/documentation/swift/expressiblebyintegerliteral?language=objc)，并且用字面量初初始化，`T(literal)` 会调用对应的协议构造方法创建类型 `T` 的实例，并不会调用类型 `T` 对应的初始化方法。
+
+```swift
+let intValue = UInt64(0xffff_ffff_ffff_ffff)
+print(intValue)
+// Swift 4.x 调用的是类型 Int 的初始化方法，所以编译器报错`Integer literal '18446744073709551615' overflows when stored into 'Int'`
+// Swift 5.0 正常，因为调用的是 UInt64 的初始化方法
+```
+
+#### 3.6 字符串插值
+
+现在字符串插值进一步提升了性能，简洁高效。如果你有代码使用这个协议，更新代码可以使用 `#if` 判断 `Swift4.2` 和 `Swift 5` 的编译器版本
+
+```swift
+#if compiler(<5)
+extension MyType: _ExpressibleByStringInterpolation { /*...*/ }
+#else
+extension MyType: ExpressibleByStringInterpolation { /*...*/ }
+#endif
+```
+
+#### 四、标准库更新
+
+- `DictionaryLiteral` 类型改名为 `KeyValuePairs`
+
+- `Swift` 调用 `OC` 代码桥接的 `CFStringGetCStringPtr` 方法在恰当的时机可能返回一个非空的值，并且从 `UTF8String` 返回的指针绑定到字符串的声明周期而非绑定到内部的自动释放池。正确的程序不会有任何问题，而且性能更优。不过可能会导致一些未经测试的代码能够运行，暴露一些隐藏的 `Bug`。例如，在 `Swift 5` 以前的非空检测的逻辑分支永远不会执行。
+
+- `Sequence` 协议不在有关联类型 `SubSequence`。之前 `Sequence` 返回值为 `SubSequence` 的类型，现在返回具体的类型。例如，`suffix(_:)` 现在返回值类型为 `Array`
+- `Sequence` 的 `Extension` 中使用 `SubSequence` 的地方，现在使用具体的类型或者将方法移到了 `Collection` 的 `Extension` 中， `Collection` 中的 `SubSequence` 依然可用。
+
+```swift
+// Swift 4.x
+extension Sequence {
+    func dropTwo() -> SubSequence {
+        return self.dropFirst(2)
+    }
+}
+
+// Swift 5
+extension Sequence {
+    func dropTwo() -> DropFirstSequence<Self> {
+        return self.dropFirst(2)
+    }
+}
+或者
+extension Collection {
+    func dropTwo() -> SubSequence {
+        return self.dropFirst(2)
+    }
+}
+```
+
+- 字符串 `Unitcode` 编码从 `UTF-16` 转变到 `UTF-8`，相对于 `String.UTF16View`，`String.UTF8View` 性能更高。可以考虑将使用 `String.UTF16View` 的代码重构成 `String.UTF8View`。
+
+#### 五、Swift 包管理
+
+- `Swift 5` 的包管理工具支持声明一些通用的，`Target` 特有的构建设置，也可以基于平台和构建配置来做不同的设置。现已支持 `Swift` 和 `C` 初始化构建设置，`C` 语言的头文件搜索路径、`library` 链接和 `framework` 链接的配置。
+
+- `Swift` 的包现在支持自定义最低支持版本。如果任何一个依赖包的版本高于最低支持版本编译时会抛出一个错误。
+
+- 依赖支持设置镜像地址，并且镜像地址的优先级最高。可以使用下面的命令来设置镜像
+
+```swift
+swift package config set-mirror \
+--package-url <original URL> --mirror-url <mirror URL>
+```
+
+- `Swift` 测试命令支持 `--enable-code-coverage` 配置来生成代码覆盖率数据。生成路径为 `<build-dir>/<configuration>/codecov`
+- `Swift 5` 不再兼容 `Swift 3` `Package.swift` 版本，依然使用 `Swift 3` 的包需要升级到最新版本
+
+- 提升了大体积包的操作速度
+- `Swift` 包管理工具新增 `--disable-automatic-resolution` 选项，开启之后 `Package.swit` 和 `Package.resolved` 不兼容的时候会直接失败。该选项可用于在持续集成系统中判断 `Package.resolved` 是否过期。
+- `Swift` 命令新增参数 `--repl`，用于在包导入库的时候启动交互式解析器。方便在不编译可执行的文件的情况下验证接口。
+
+- 更多关于 `Swift` 包管理工具的内容，可以访问 [Using the Package Manager](https://swift.org/getting-started/#using-the-package-manager)
+
+#### 六、Swift 编译器
+
+- 内存的独占访问在编译器优化等级为 `-O` 和 `-Osize` 的运行时默认开启。违反独占访问的程序会在运行时收到包含有 "重复访问" 诊断信息的陷阱信号。可以使用 `-enforce-exclusivity=unchecked` 命令行选项来关闭，但是这样做可能导致一些奇怪的行为。运行时违背独占访问的场景主要是同时访问类的属性、全局变量或者逃逸性闭包捕获的变量。
+
+- 不再支持 `Swift 3`，支持版本为 `Swift 4，4.2` 和 `5`
+
+- `Swift 5` 中，在 `OC` 或者系统库中定义的枚举需要处理 unknown 分支(未来可能增加新的分支或者定义在 `OC` 实现文件中的私有枚举)。通常情况下，`OC` 中只要满足枚举类型，就可以在枚举中存储任何值。未知分支可以使用 `@unknown default` 来处理。任何已知分支在 switch 的时候被忽略掉了会产生警告，可以通过正常的默认分支来处理。
+
+  ```swift
+  // OC 枚举
+  typedef NS_ENUM(NSUInteger, PBRandomEnum) {
+      PBRandomEnumOne,
+      PBRandomEnumTwo,
+      PBRandomEnumThree,
+  };
+
+  // Swift 4.x
+  func testEnum(_ enumCase: PBRandomEnum) {
+  	switch enumCase {
+  	case .one:
+  		print(1)
+  	case .two:
+  		print(2)
+  	case .three:
+  		print(3)
+  	}
+  }
+
+  // Swift 5 中，如果没有 @unknown default: 会产生警告 `Handle unknown values using "@unknown default"`
+  func testEnum(_ enumCase: PBRandomEnum) {
+  	switch enumCase {
+  	case .one:
+  		print(1)
+  	case .two:
+  		print(2)
+  	case .three:
+  		print(3)
+  	@unknown default:
+  		fatalError()
+  	}
+  }
+  ```
+
+  如果在 `OC` 中定义枚举并且处理未知分支，可以使用 `NS_CLOSED_ENUM` 替代 `NS_ENUM`。`Swift` 的编译器会自动识别并且也不需要有默认的分支。
+
+  ```swift
+  // OC 枚举
+  typedef NS_CLOSED_ENUM(NSUInteger, PBRandomEnum) {
+      PBRandomEnumOne,
+      PBRandomEnumTwo,
+      PBRandomEnumThree,
+  };
+
+  // Swift 5 中不需要使用 @unknown default
+  func testEnum(_ enumCase: PBRandomEnum) {
+  	switch enumCase {
+  	case .one:
+  		print(1)
+  	case .two:
+  		print(2)
+  	case .three:
+  		print(3)
+  	}
+  }
+  ```
+
+  `Swift 4` 和 `Swift 4.2`，仍然可以使用 `@unknown`。如果没有处理未知分支，会同 `Xcode 10.1` 中的 `Swift 4.2` 一样产生运行时中的陷阱信号
+
+- 默认参数不仅只是使用一个默认的占位符，还会在 `SourceKit` 自动生成的接口中显示出来
+
+  ```swift
+  // 实现
+  class SwiftTest {
+      func testDefaultArgument(_ name: String = "James") {
+          print("My name is \(name)")
+      }
+  }
+
+  // Swift 4.x 接口
+  internal class SwiftTest {
+
+      internal func testDefaultArgument(_ name: String = default)
+  }
+
+  // Swift 5 接口
+  internal class SwiftTest {
+      internal func testDefaultArgument(_ name: String = "James")
+  }
+  ```
+
+- `unowned` 修饰的变量支持可选类型
+
+  ```swift
+  class ViewController: UIViewController {
+      private unowned var unownedDelegate: UIWebViewDelegate?
+  }
+
+  // Swift 4.x
+  'unowned' may only be applied to class and class-bound protocol types, not 'UIWebViewDelegate?'
+  ```
+
+#### 七、引用
+
+> 感谢 Swift 官方团队的努力和以下文章的作者大佬
+
+- [Swift 5 Release Notes for Xcode 10.2 beta](https://developer.apple.com/documentation/xcode_release_notes/xcode_10_2_beta_release_notes/swift_5_release_notes_for_xcode_10_2_beta?language=objc)
+
+- [Handling Future Enum Cases](https://github.com/apple/swift-evolution/blob/master/proposals/0192-non-exhaustive-enums.md)
+
+- [Swift Package Manager](https://swift.org/package-manager/)
+- [Uncovering SourceKit](https://www.jpsim.com/uncovering-sourcekit/)
+
+- [[译]优化 Swift 编译时间](https://www.jianshu.com/p/15e527bbc323)
