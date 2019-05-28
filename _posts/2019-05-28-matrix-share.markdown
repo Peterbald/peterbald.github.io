@@ -14,7 +14,7 @@ tags:
 
 #### 一、概述
 
-最近在做监控相关的东西，期间读了下腾讯开源的 Matrix 的代码，之前公司内部做了分享，现将内容整理成文分享给大家。
+最近在做监控相关的东西，期间读了下腾讯开源的 Matrix 的代码，在公司内部做了分享，现将内容整理成文分享给大家。
 
 #### 二、Matrix 简介
 
@@ -41,7 +41,7 @@ OSX 和 iOS 下系统架构主要分为四层：
 - 应用层：也叫用户体验层，MacOS 平台 GUI 是 Aqua，iOS 平台是 SpringBoard。SpringBoard 主要是用来管理 iOS 设备上的主屏幕、图标等
 - 应用框架层：MacOS 平台是 Cocoa 框架，包含 Foudation 和 AppKit 框架。iOS 平台是 Cocoa Touch 框架，包含 Foudation 和 UIKit 框架
 - 核心框架层：也叫图形和媒体层。包括核心框架、Open GL 和 QuickTime
-- Darwin：包含开放源代码的[XNU](https://zh.wikipedia.org/wiki/XNU)[内核](https://zh.wikipedia.org/wiki/内核)，其以[微核心](https://zh.wikipedia.org/wiki/微核心)为基础的核心架构来实现[Mach](https://zh.wikipedia.org/wiki/Mach)，而操作系统的服务和[用户空间](https://zh.wikipedia.org/wiki/使用者空間)工具则以[BSD](https://zh.wikipedia.org/wiki/BSD)为基础
+- Darwin：包含开放源代码的 XNU 内核，其以微核心为基础的核心架构来实现 Mach，而操作系统的服务和用户空间工具则以 BSD 为基础
 
 在这里面重点理解清楚几个概念：
 
