@@ -26,7 +26,7 @@ Matrix 架构主要采用插件模式
 - MatrixBuilder 负责持有插件，并向外部提供插件生命周期的统一回调
 - MatrixPlugin 插件的抽象类
 
-![image-20190523163859121](http://ww3.sinaimg.cn/large/006tNc79gy1g3bc9eoh4sj30mp0ehwh6.jpg)
+![image-20190523163859121](/img/matrixArch.png)
 
 #### 三、Crash 捕获
 
@@ -34,7 +34,7 @@ Crash Free 是我们平时关注比较多的稳定性指标，在了解 Crash �
 
 ##### 3.1 OSX、iOS 的系统架构
 
-![image-20190527115401277](http://ww4.sinaimg.cn/large/006tNc79gy1g3fqi4vscrj308g05gjri.jpg)
+![image-20190527115401277](/img/iosSimpleArch.png)
 
 OSX 和 iOS 下系统架构主要分为四层：
 
@@ -45,7 +45,7 @@ OSX 和 iOS 下系统架构主要分为四层：
 
 在这里面重点理解清楚几个概念：
 
-![image-20190527163329987](http://ww1.sinaimg.cn/large/006tNc79gy1g3fykxra0lj30du0csgqb.jpg)
+![image-20190527163329987](/img/iosArchtecture.png)
 
 - POSIX：表示可移植操作系统接口（Portable Operating System Interface of UNIX，缩写为 POSIX），POSIX 标准定义了操作系统应该为应用程序提供的接口标准，是针对 UNIX 提供的标准
 - BSD：伯克利软件包(Berkeley Software Distribution，BSD)，是一个派生自 Unix 的操作系统。内核的 BSD 部分提供了 POSIX 应用程序接口
@@ -61,7 +61,7 @@ OSX 和 iOS 下系统架构主要分为四层：
 
 - Mach 异常：用户态下可以直接通过 Mach API 设置 Thread/Task/Host 的异常端口来捕获异常。Mach 异常的定义如下
 
-  ![image-20190527171954030](http://ww3.sinaimg.cn/large/006tNc79gy1g3fzx5rsg6j30cu0f6dj7.jpg)
+  ![image-20190527171954030](/img/machException.png)
 
 - Unix 信号：维基百科中的定义如下
 
@@ -69,7 +69,7 @@ OSX 和 iOS 下系统架构主要分为四层：
 
   如果开发者没有捕获 Mach 异常，会被 host 层上的 ux_exception() 捕获到 Mach 异常，将之转换成 Unix Signal，通过 ThreadSignal 将信号投递到出错的线程，可以通过 signalHandler 回调来获取信号。Unix 信号定义如下：
 
-  ![image-20190527172018469](http://ww1.sinaimg.cn/large/006tNc79gy1g3h2dod26uj30ds0fwwka.jpg)
+  ![image-20190527172018469](/img/signalDefine.png)
 
 异常的处理流程中，先由 Mach 内核抛出，通过 ux_exception() 转成 Unix Signal，所以处理 Crash 的时候应该优先处理 Mach 异常，如果 Mach 异常处理完成之后直接退出，Unix 信号不会有机会处理
 
@@ -197,7 +197,7 @@ Matrix 中的卡顿监控是基于 `Runloop` 来做的，先来了解下什么�
 
 在阅读 [MrPeak](http://mrpeak.cn/blog/ios-runloop/) 大佬的文章和 `Runloop` 代码之后，总结如下图：
 
-![](http://ww1.sinaimg.cn/large/006tNc79gy1g3g577c2slj30lz0dmq5s.jpg)
+![](/img/runloopMindNode.png)
 
 - doBlocks：调用 runloop 中 \_blocks_item 链表中的每个 block。通过 CFRunLoopPerformBlock 函数可以添加 block。
 - doSource0：处理 runloopMode 相关的 source0，调用 runloopSource 的 perform 函数，参数被 runloopSource 持有。source0 有开发者可以调用的 API。
