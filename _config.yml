@@ -101,4 +101,17 @@ page-mathjax: false
 
 
 # Friends
-# friends: []
+friends: [
+    {
+        title: "Hays Blog",
+        href: "http://hays.ren"
+    },
+    {
+        title: "Findyam Blog",
+        href: "http://findyam.github.io/"
+    },
+    {
+        title: "Kai Blog",
+        href: "http://kaynewbie.github.io/"
+    }
+]
