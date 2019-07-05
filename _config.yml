@@ -113,5 +113,9 @@ friends: [
     {
         title: "Kai Blog",
         href: "http://kaynewbie.github.io/"
+    },
+    {
+        title: "SunPeng Blog",
+        href: "https://halospark.github.io/"
     }
 ]
