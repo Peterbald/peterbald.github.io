@@ -117,5 +117,9 @@ friends: [
     {
         title: "SunPeng Blog",
         href: "https://halospark.github.io/"
+    },
+    {
+        title: "Mad Mark's Blog",
+        href: "http://madmark.cc/"
     }
 ]
