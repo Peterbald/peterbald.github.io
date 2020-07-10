@@ -190,9 +190,7 @@ Flutter 布局机制的核心就是 widget。在 Flutter 中，万物皆组件�
 ### 4.1 Flutter 架构解析
 
 先看下 Flutter 的架构图：
-
 ![Flutter 架构](https://tva1.sinaimg.cn/large/007S8ZIlgy1ggmbdnrfyfj30i309raam.jpg)
-
 再重新理解下涉及到的概念：Widget、Element 和 RenderObject
 
 Widget：
@@ -215,7 +213,6 @@ RenderObject：
 > 当 Flutter 绘制 UI 的时候，不会依赖 Widget 树，但是会依赖 Render Object 树，Render Object 控制尺寸、布局以及实际组件的绘制逻辑，正因如此 Render Object 实例化逻辑很重。简单来说就是控制尺寸、布局和绘制，负责绘制到屏幕上。
 
 Widget、Element、RenderObject 的职责见下图：
-
 ![三棵树](https://tva1.sinaimg.cn/large/007S8ZIlgy1ggmbdn4gv4j311y0lemzg.jpg)
 
 ![三棵树职责](https://tva1.sinaimg.cn/large/007S8ZIlgy1ggmbdm68daj311y0liju4.jpg)
@@ -229,19 +226,15 @@ RenderObject 和 Widget 是同构的，RenderObject 树是 Element 树的子集�
 - 类型安全：Render object 树能够保证运行时子节点类型合适，更加的类型安全。因为合成的组件在布局的时候无法感知所在的坐标系，所以校验 element 树中 render object 的类型需要遍历整棵树。
 
 注：每个坐标系中都有对应的 Render object 类型，在 App Model 中相同的组件可以使用 box 布局，也可以使用 sliver 布局。具体参见 [https://stackoverflow.com/questions/53590842/whats-the-difference-between-box-layout-model-and-sliver-layout-model-boxconst](https://stackoverflow.com/questions/53590842/whats-the-difference-between-box-layout-model-and-sliver-layout-model-boxconst)
-
 总结：Widget 是描述 UI 的树，Element 是 Widget 的实例，用来管理 Widget 和 RenderObject，RenderObject 树用来做渲染。
 
 ### 4.3 渲染 pipeline
 
 ![Pipeline](https://tva1.sinaimg.cn/large/007S8ZIlgy1ggmbdlcpvxj30ih09c0t3.jpg)
-
 Widget build 完成后，会调用 widget 的 createElement 创建对应 Element，然后 Element 调用 createRenderObject 创建对应的 RenderObject 对象。
 
 CreateElement 的调用栈如下：
-
 ![调用栈](https://tva1.sinaimg.cn/large/007S8ZIlgy1ggmbdmmbkxj30gx0gfwf9.jpg)
-
 组件更新的时候会调用 Widget 的 canUpdate 方法来判断组件是否需要更新，需要判断 Widget 的 runtimeType 和 key 均一致才可以。
 
 ```dart
